@@ -8,6 +8,7 @@ package main
 // And move program in download file to $PATH.
 
 import (
+	"bufio"
 	"fmt"
 	"log"
 	"os"
@@ -20,20 +21,33 @@ func main() {
 	var driver *agouti.WebDriver
 	var (
 		debug bool
+		file  string
 		url   string
 		xpath string
 	)
 
 	pflag.BoolVarP(&debug, "debug", "d", false, "If true, chrome window will open")
-	pflag.StringVarP(&xpath, "file", "f", "", "Input file has xpath expression")
+	pflag.StringVarP(&file, "file", "f", "", "Input file has xpath expression")
 	pflag.Parse()
 	args := pflag.Args()
 	fmt.Println(args)
 
 	// From Tokyo Sta. to Inadadudumi Sta. at starts on 2020/04/14 08:45
 	url = "https://transit.yahoo.co.jp/search/result?flatlon=&fromgid=&from=%E6%9D%B1%E4%BA%AC&tlatlon=&togid=&to=%E7%A8%B2%E7%94%B0%E5%A0%A4&viacode=&via=&viacode=&via=&viacode=&via=&y=2020&m=04&d=14&hh=08&m2=5&m1=4&type=1&ticket=ic&expkind=1&ws=3&s=0&al=1&shin=1&ex=1&hb=1&lb=1&sr=1&kw=%E7%A8%B2%E7%94%B0%E5%A0%A4"
-	if xpath == "" {
+	if file == "" {
 		xpath = "//div[@id='contents-body']/div[@id='main']//div[@id='srline']//dl/dd/ul/li//span[@class='mark' and contains(text(), '円')]"
+	} else {
+		fp, err := os.Open(file)
+		if err != nil {
+			log.Fatalf("Failed to open file: %v", err)
+		}
+		defer fp.Close()
+
+		scanner := bufio.NewScanner(fp)
+		for scanner.Scan() {
+			xpath = scanner.Text()
+			break
+		}
 	}
 
 	if debug == true {
